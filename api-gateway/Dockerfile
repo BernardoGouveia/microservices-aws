@@ -23,7 +23,7 @@ RUN chown spring:spring app.jar
 USER spring:spring
 
 # Expose port (adjust for each service: 8081 for user-service, 8082 for product-service, etc.)
-EXPOSE 8081
+EXPOSE 8080
 
 # JVM tuning for containers (adjust memory percentage as needed)
 ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC"
