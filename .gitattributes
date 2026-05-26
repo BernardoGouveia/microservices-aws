@@ -1,0 +1,29 @@
+# Enforce LF line endings for files executed on Linux CI runners,
+# regardless of contributors' core.autocrlf settings.
+
+*.yml        text eol=lf
+*.yaml       text eol=lf
+*.sh         text eol=lf
+*.bash       text eol=lf
+Dockerfile   text eol=lf
+*.dockerfile text eol=lf
+
+# Terraform and JSON policy files — keep LF for consistency across OSes.
+*.tf         text eol=lf
+*.tfvars     text eol=lf
+*.json       text eol=lf
+
+# Maven wrapper scripts must be LF on Unix.
+mvnw         text eol=lf
+gradlew      text eol=lf
+
+# Binary files — never touch line endings.
+*.jar        binary
+*.png        binary
+*.jpg        binary
+*.jpeg       binary
+*.gif        binary
+*.ico        binary
+*.pdf        binary
+*.zip        binary
+*.gz         binary
