@@ -42,6 +42,12 @@ public class KafkaConfig {
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         configProps.put(ProducerConfig.ACKS_CONFIG, "all");
+        // Mapeia as classes de evento para tokens logicos (ex.: "orderCreated") em vez do
+        // nome completo da classe. Assim o consumidor noutro servico (com o seu proprio
+        // pacote) consegue desserializar via spring.json.type.mapping, sem partilhar classes.
+        configProps.put(JsonSerializer.TYPE_MAPPINGS,
+                "orderCreated:pt.ulusofona.orderservice.event.OrderCreatedEvent,"
+                        + "orderStatusChanged:pt.ulusofona.orderservice.event.OrderStatusChangedEvent");
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 

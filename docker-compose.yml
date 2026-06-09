@@ -91,6 +91,11 @@ services:
     build:
       context: ./services/api-gateway
       dockerfile: Dockerfile
+    environment:
+      # No Docker o gateway fala com os servicos pelos nomes de container (nao localhost).
+      SERVICES_USER_URI: http://user-service:8081
+      SERVICES_PRODUCT_URI: http://product-service:8082
+      SERVICES_ORDER_URI: http://order-service:8083
     ports:
       - "8080:8080"
     depends_on:

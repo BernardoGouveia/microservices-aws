@@ -1,5 +1,6 @@
 package pt.ulusofona.apigateway.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +34,17 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class GatewayConfig {
+
+    // URIs dos servicos configuraveis por ambiente (ex.: SERVICES_USER_URI no
+    // docker-compose). Default localhost para correr os servicos diretamente.
+    @Value("${services.user.uri:http://localhost:8081}")
+    private String userServiceUri;
+
+    @Value("${services.product.uri:http://localhost:8082}")
+    private String productServiceUri;
+
+    @Value("${services.order.uri:http://localhost:8083}")
+    private String orderServiceUri;
 
     /**
      * Creates and configures the RouteLocator bean for API Gateway routing.
@@ -72,19 +84,22 @@ public class GatewayConfig {
                 // Routes all requests matching /api/users/** to the User Service
                 .route("user-service", r -> r
                         .path("/api/users/**")
-                        .uri("http://localhost:8081"))
+                        .filters(f -> f.stripPrefix(1))
+                        .uri(userServiceUri))
                 
                 // Product Service routes
                 // Routes all requests matching /api/products/** to the Product Service
                 .route("product-service", r -> r
                         .path("/api/products/**")
-                        .uri("http://localhost:8082"))
+                        .filters(f -> f.stripPrefix(1))
+                        .uri(productServiceUri))
                 
                 // Order Service routes
                 // Routes all requests matching /api/orders/** to the Order Service
                 .route("order-service", r -> r
                         .path("/api/orders/**")
-                        .uri("http://localhost:8083"))
+                        .filters(f -> f.stripPrefix(1))
+                        .uri(orderServiceUri))
                 
                 .build();
     }
