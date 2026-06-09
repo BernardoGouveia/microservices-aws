@@ -31,3 +31,16 @@ variable "lock_table_name" {
   description = "DynamoDB table name for state locking. Must match dynamodb_table in each environment's backend.tf."
   default     = "microservices-tf-locks"
 }
+
+# Email do alarme de billing. Sem default de proposito: passa via -var para nao
+# ficar gravado no repo (publico).
+variable "billing_alarm_email" {
+  type        = string
+  description = "Email que recebe os alertas de billing (passar via -var)."
+}
+
+variable "billing_alarm_threshold_usd" {
+  type        = number
+  description = "Limite de custo estimado (USD) que dispara o alarme de billing."
+  default     = 5
+}
