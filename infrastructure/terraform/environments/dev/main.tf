@@ -46,6 +46,7 @@ module "compute" {
   key_name         = var.key_name
   allowed_ssh_cidr = var.allowed_ssh_cidr
   allowed_app_cidr = var.allowed_app_cidr
+  app_port         = 8082 # porta do product-service (deploy via Ansible) aberta para teste externo
   sqs_queue_arns   = module.messaging.queue_arns # limita o acesso SQS a estas filas
   ssm_path_prefix  = local.ssm_path_prefix
 }
