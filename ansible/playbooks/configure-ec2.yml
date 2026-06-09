@@ -1,0 +1,100 @@
+---
+# Activity 5 — EC2 Configuration Playbook
+# Creates an app user, installs Java 21, uploads a pre-built JAR, and runs it as a systemd service.
+#
+# Why no on-host Maven build: the t2/t3.micro EC2 only has ~1 GB RAM and Maven + Java 21
+# compilation OOMs the kernel. We build locally instead and just ship the JAR up.
+#
+# Build the JAR first (on the Ansible controller / your laptop):
+#   cd <repo root>
+#   mvn -pl product-service -am clean package -DskipTests
+#
+# Then run: ansible-playbook -i inventory.ini configure-ec2.yml
+
+- name: Configure EC2 Instances
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    app_user: appuser
+    app_directory: /opt/app
+    service_name: product-service
+    local_jar_path: "{{ playbook_dir }}/../../services/product-service/target/product-service-1.0.0.jar"
+    remote_jar_path: "{{ app_directory }}/{{ service_name }}.jar"
+
+  tasks:
+    - name: Create application user
+      user:
+        name: "{{ app_user }}"
+        system: yes
+        shell: /bin/bash
+        create_home: yes
+
+    - name: Install Java 21 runtime
+      yum:
+        name: java-21-amazon-corretto-headless
+        state: present
+
+    - name: Create application directory
+      file:
+        path: "{{ app_directory }}"
+        state: directory
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0755'
+
+    - name: Stop any container occupying port 8082 (Activity 6's product-service container conflicts with the systemd service)
+      community.docker.docker_container:
+        name: product-service
+        state: stopped
+      ignore_errors: yes
+
+    - name: Upload the pre-built product-service JAR
+      copy:
+        src: "{{ local_jar_path }}"
+        dest: "{{ remote_jar_path }}"
+        owner: "{{ app_user }}"
+        group: "{{ app_user }}"
+        mode: '0644'
+
+    - name: Locate Java 21 home (for the systemd unit's JAVA_HOME)
+      find:
+        paths: /usr/lib/jvm
+        patterns: "java-21-amazon-corretto*"
+        file_type: directory
+        recurse: no
+      register: java21_dirs
+
+    - name: Set java_home fact
+      set_fact:
+        java_home: "{{ (java21_dirs.files | sort(attribute='path') | last).path }}"
+
+    - name: Set jar_path fact (template expects a dict with a .path attr to match the old build path)
+      set_fact:
+        jar_path:
+          path: "{{ remote_jar_path }}"
+
+    - name: Create systemd service from template
+      template:
+        src: product-service.service.j2
+        dest: /etc/systemd/system/{{ service_name }}.service
+        mode: '0644'
+      notify: restart product-service
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: Enable and start product-service
+      systemd:
+        name: "{{ service_name }}"
+        enabled: yes
+        state: started
+
+  handlers:
+    - name: restart product-service
+      systemd:
+        name: "{{ service_name }}"
+        state: restarted
+        daemon_reload: yes

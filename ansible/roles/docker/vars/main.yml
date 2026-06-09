@@ -1,0 +1,3 @@
+---
+# Role-internal vars (lower precedence than defaults; use sparingly).
+# Kept empty by default; populate if the role needs constants.

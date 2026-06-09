@@ -43,6 +43,11 @@ Thumbs.db
 *.tfstate.*
 .terraform.lock.hcl
 
+# Keys / secrets
+*.pem
+*.key
+*.p12
+
 # Environment variables
 .env
 .env.local

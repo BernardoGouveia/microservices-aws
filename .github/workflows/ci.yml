@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: product-service
+        working-directory: services/product-service
     steps:
       - uses: actions/checkout@v4
 
@@ -38,4 +38,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: surefire-reports
-          path: product-service/target/surefire-reports/
+          path: services/product-service/target/surefire-reports/

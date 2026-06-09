@@ -25,7 +25,7 @@ jobs:
       - name: Build & push
         uses: docker/build-push-action@v6
         with:
-          context: ./product-service
+          context: ./services/product-service
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/product-service:latest

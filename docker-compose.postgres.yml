@@ -1,0 +1,57 @@
+# Override para TESTAR o perfil de produção (PostgreSQL) localmente, sem AWS.
+# Uso:
+#   docker compose -f docker-compose.kafka.yml up -d            # Kafka primeiro
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+#
+# Acrescenta um container PostgreSQL e coloca os serviços no perfil "production"
+# a apontar para ele. A palavra-passe abaixo é APENAS para teste local
+# (descartável) — em produção vem do SSM, nunca do código.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: localdevpassword
+    ports:
+      - "5432:5432"
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  user-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      DB_HOST: postgres
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: localdevpassword
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  product-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      DB_HOST: postgres
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: localdevpassword
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  order-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      DB_HOST: postgres
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: localdevpassword
+    depends_on:
+      postgres:
+        condition: service_healthy

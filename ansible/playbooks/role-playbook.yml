@@ -1,0 +1,22 @@
+---
+# Activity 4 — Uses the docker role on all hosts.
+# Run: ansible-playbook -i inventory.ini role-playbook.yml
+
+- name: Configure Servers via Docker role
+  hosts: all
+  become: yes
+
+  pre_tasks:
+    - name: Ensure app-user exists (needed by docker_users loop in the role)
+      user:
+        name: app-user
+        system: yes
+        shell: /bin/bash
+        create_home: yes
+
+  roles:
+    - role: docker
+      vars:
+        docker_users:
+          - ec2-user
+          - app-user

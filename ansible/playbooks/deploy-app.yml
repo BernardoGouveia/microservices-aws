@@ -1,0 +1,81 @@
+---
+# Activity 6 — Application Deployment Playbook
+# Pulls the latest image tag, replaces the running container, and verifies healthcheck.
+# Run: IMAGE_TAG=1.0 ansible-playbook -i inventory.ini deploy-app.yml
+
+- name: Deploy Application
+  hosts: web_servers
+  become: yes
+
+  vars:
+    image_name: a22204317/product-service
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
+    container_name: product-service
+    app_port: 8082
+    db_host: "{{ lookup('env', 'DB_HOST') | default('localhost', true) }}"
+    # Por omissão alinhado com os valores do RDS/Terraform (db_name=appdb, username=appuser).
+    db_name: "{{ lookup('env', 'DB_NAME') | default('appdb', true) }}"
+    db_user: "{{ lookup('env', 'DB_USER') | default('appuser', true) }}"
+    db_password: "{{ lookup('env', 'DB_PASSWORD') | default('', true) }}"
+
+  tasks:
+    - name: Ensure Python docker SDK is present
+      pip:
+        name: docker
+        executable: pip3
+
+    - name: Stop the old user-service container (frees memory if still running)
+      community.docker.docker_container:
+        name: user-service
+        state: absent
+      ignore_errors: yes
+
+    - name: Pull latest image
+      community.docker.docker_image:
+        name: "{{ image_name }}"
+        tag: "{{ image_tag }}"
+        source: pull
+        force_source: yes
+
+    - name: Stop and remove existing container (idempotent)
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      ignore_errors: yes
+
+    - name: Start new container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}:{{ image_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ app_port }}:8082"
+        env:
+          SPRING_PROFILES_ACTIVE: "production"
+          DB_HOST: "{{ db_host }}"
+          DB_NAME: "{{ db_name }}"
+          DB_USER: "{{ db_user }}"
+          DB_PASSWORD: "{{ db_password }}"
+          # No Kafka on the EC2 — disable its health indicator so /actuator/health stays UP
+          MANAGEMENT_HEALTH_KAFKA_ENABLED: "false"
+        # Note: image doesn't ship curl/wget, so we check health externally below instead of via container healthcheck
+
+    - name: Wait for /actuator/health to return UP (checked from inside the EC2)
+      uri:
+        url: "http://localhost:{{ app_port }}/actuator/health"
+        return_content: yes
+        status_code: 200
+      register: health
+      until: (health.json.status | default('')) == 'UP'
+      retries: 24
+      delay: 5
+
+    - name: Show recent container logs
+      command: docker logs --tail 30 {{ container_name }}
+      register: container_logs
+      changed_when: false
+
+    - name: Print container logs
+      debug:
+        var: container_logs.stdout_lines

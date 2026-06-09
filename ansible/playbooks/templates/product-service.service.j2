@@ -1,0 +1,25 @@
+[Unit]
+Description=Product Service (Spring Boot)
+After=network.target
+
+[Service]
+Type=simple
+User={{ app_user }}
+Group={{ app_user }}
+WorkingDirectory={{ app_directory }}/{{ service_name }}-src/product-service
+Environment=JAVA_HOME={{ java_home }}
+ExecStart={{ java_home }}/bin/java -jar {{ jar_path.path }}
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+
+# Environment — uncomment / add as needed
+# Environment=SPRING_PROFILES_ACTIVE=production
+# Environment=SERVER_PORT=8082
+
+# Hardening (optional)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

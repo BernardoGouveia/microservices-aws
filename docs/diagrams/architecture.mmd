@@ -1,0 +1,22 @@
+%% Diagrama de arquitetura (fonte). Renderizar em https://mermaid.live ou com a
+%% CLI do Mermaid: mmdc -i architecture.mmd -o architecture.svg
+%% Também embebido (e renderizado automaticamente pelo GitHub) em ../architecture.md.
+flowchart TB
+  client([Cliente])
+  client --> gw["API Gateway :8080"]
+
+  subgraph services[Servicos da aplicacao]
+    gw --> us["user-service :8081"]
+    gw --> ps["product-service :8082"]
+    gw --> os["order-service :8083"]
+    os -- "OpenFeign (sincrono)" --> us
+    os -- "OpenFeign (sincrono)" --> ps
+  end
+
+  ps -- "publica ProductCreated" --> q[["SQS product-events"]]
+  q -- "consome" --> os
+  q -. "apos 5 falhas" .-> dlq[["SQS DLQ"]]
+
+  us --> db[("PostgreSQL / RDS")]
+  ps --> db
+  os --> db

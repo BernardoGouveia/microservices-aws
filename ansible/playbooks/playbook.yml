@@ -1,0 +1,64 @@
+---
+# Activity 3 — Basic playbook
+# Installs Docker on web_servers and runs the product-service container.
+# Run: ansible-playbook -i inventory.ini playbook.yml
+
+- name: Configure Web Servers
+  hosts: web_servers
+  become: yes
+  vars:
+    docker_image_name: a22204317/product-service
+    docker_image_tag: "1.0"
+    container_port: 8082  # product-service runs on 8082 (see application.yml)
+
+  tasks:
+    - name: Update system packages
+      yum:
+        name: "*"
+        state: latest
+        update_cache: yes
+
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+
+    - name: Install pip3 (required for the docker Python SDK)
+      yum:
+        name: python3-pip
+        state: present
+
+    - name: Install Python docker SDK (required by community.docker modules)
+      pip:
+        name: docker
+        executable: pip3
+        extra_args: "--ignore-installed requests urllib3"
+
+    - name: Pull application image
+      community.docker.docker_image:
+        name: "{{ docker_image_name }}"
+        tag: "{{ docker_image_tag }}"
+        source: pull
+
+    - name: Run application container
+      community.docker.docker_container:
+        name: product-service
+        image: "{{ docker_image_name }}:{{ docker_image_tag }}"
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "{{ container_port }}:8082"
+        env:
+          SPRING_PROFILES_ACTIVE: "production"

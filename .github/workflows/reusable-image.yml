@@ -24,6 +24,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
-          context: ./${{ inputs.service }}
+          context: ./services/${{ inputs.service }}
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.service }}:${{ github.sha }}

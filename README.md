@@ -55,7 +55,8 @@ This is a microservices-based application demonstrating a modern cloud-native ar
 
 ```
 microservices-project/
-├── api-gateway/          # API Gateway using Spring Cloud Gateway
+├── services/             # All microservices
+│   └── api-gateway/      # API Gateway using Spring Cloud Gateway
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/
@@ -67,7 +68,7 @@ microservices-project/
 │   │   │       └── application.yml
 │   │   └── test/
 │   └── pom.xml
-├── user-service/         # User management microservice
+│   └── user-service/     # User management microservice
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/
@@ -89,7 +90,7 @@ microservices-project/
 │   │   │       └── application.yml
 │   │   └── test/
 │   └── pom.xml
-├── product-service/      # Product management microservice
+│   └── product-service/  # Product management microservice
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/
@@ -111,7 +112,7 @@ microservices-project/
 │   │   │       └── application.yml
 │   │   └── test/
 │   └── pom.xml
-├── order-service/        # Order management microservice (Kafka + OpenFeign)
+│   └── order-service/    # Order management microservice (Kafka + OpenFeign)
 │   ├── src/
 │   │   ├── main/
 │   │   │   ├── java/
@@ -197,25 +198,25 @@ Open three separate terminal windows:
 
 **Terminal 1 - User Service:**
 ```bash
-cd user-service
+cd services/user-service
 mvn spring-boot:run
 ```
 
 **Terminal 2 - Product Service:**
 ```bash
-cd product-service
+cd services/product-service
 mvn spring-boot:run
 ```
 
 **Terminal 3 - Order Service:**
 ```bash
-cd order-service
+cd services/order-service
 mvn spring-boot:run
 ```
 
 **Terminal 4 - API Gateway:**
 ```bash
-cd api-gateway
+cd services/api-gateway
 mvn spring-boot:run
 ```
 
@@ -232,15 +233,15 @@ docker-compose -f docker-compose.kafka.yml up -d
 mvn clean package
 
 # Run User Service
-cd user-service
+cd services/user-service
 java -jar target/user-service-1.0.0.jar
 
 # Run Product Service (in another terminal)
-cd product-service
+cd services/product-service
 java -jar target/product-service-1.0.0.jar
 
 # Run API Gateway (in another terminal)
-cd api-gateway
+cd services/api-gateway
 java -jar target/api-gateway-1.0.0.jar
 ```
 
@@ -318,19 +319,19 @@ Execute tests for each service:
 export JAVA_HOME=$(/usr/libexec/java_home -v 21)
 
 # Run User Service tests
-cd user-service
+cd services/user-service
 mvn test
 
 # Run Product Service tests
-cd product-service
+cd services/product-service
 mvn test
 
 # Run Order Service tests
-cd order-service
+cd services/order-service
 mvn test
 
 # Run API Gateway tests
-cd api-gateway
+cd services/api-gateway
 mvn test
 
 # Run all tests from root
@@ -403,7 +404,7 @@ The template also includes **optional AWS SQS** wiring for a shared **`product-e
 - **product-service** publishes a JSON `ProductCreated` event after a successful **`POST /products`** when `cloud.sqs.product-events.enabled=true`.
 - **order-service** long-polls the same queue URL and logs received events when `cloud.sqs.product-events-consumer.enabled=true`.
 
-Terraform for queues + DLQ lives in **`infra/week9-sqs/`**. The Week 10 course materials focus on **infrastructure** (queues, IAM, environment variables), not on implementing Java producers or consumers.
+Terraform for queues + DLQ lives in **`infrastructure/week9-sqs/`**. The Week 10 course materials focus on **infrastructure** (queues, IAM, environment variables), not on implementing Java producers or consumers.
 
 ## Microservice Architecture
 
@@ -479,7 +480,7 @@ Each microservice follows a layered architecture pattern:
 - [ ] Configure deployment environments
 
 ### Week 11 - SQS (event-driven architecture, cloud focus)
-- [ ] Create SQS main queue and DLQ (Terraform in `infra/week9-sqs/`, or Console / CLI)
+- [ ] Create SQS main queue and DLQ (Terraform in `infrastructure/week9-sqs/`, or Console / CLI)
 - [ ] Configure redrive policy and sensible visibility timeout / long polling
 - [ ] Grant IAM least privilege (`SendMessage` / `ReceiveMessage` / `DeleteMessage`, etc.)
 - [ ] Enable the template via `CLOUD_SQS_*` environment variables and verify logs end-to-end
@@ -586,16 +587,18 @@ docker-compose down
 
 All workflows live under [`.github/workflows/`](.github/workflows/) and run on GitHub-hosted Ubuntu runners.
 
-### Repository layout note (vs. the activity example)
+### Repository layout
 
-The Week 10 activity sheet shows services under `services/<svc>/` and Terraform under `terraform/`. This repo keeps the existing template layout:
+This repo follows the suggested project layout:
 
-| Activity example  | This repo                |
-|-------------------|--------------------------|
-| `services/<svc>/` | `<svc>/` (at repo root)  |
-| `terraform/`      | `infra/week9-sqs/`       |
+| Component | Location |
+|-----------|----------|
+| Services  | `services/<svc>/` |
+| Terraform | `infrastructure/terraform/` (modules + `dev`/`prod` environments) |
+| Ansible   | `ansible/` |
+| Docs      | `docs/` |
 
-Workflow paths have been adjusted accordingly. Functionality is identical.
+The standalone Week 9 SQS lab artifact lives in `infrastructure/week9-sqs/`.
 
 ### Workflow inventory
 
@@ -605,7 +608,7 @@ Workflow paths have been adjusted accordingly. Functionality is identical.
 | [`ci.yml`](.github/workflows/ci.yml)                                | 2        | PR, push to `main`                       | Maven `validate` → `compile` → `verify`; uploads Surefire reports             |
 | [`image.yml`](.github/workflows/image.yml)                          | 3        | push to `main`, `workflow_dispatch`      | Builds & pushes `product-service` to Docker Hub, tagged `latest` and `<sha>`  |
 | [`aws-test.yml`](.github/workflows/aws-test.yml)                    | 4        | `workflow_dispatch`                      | Assumes IAM role via OIDC and runs `aws sts get-caller-identity`              |
-| [`terraform.yml`](.github/workflows/terraform.yml)                  | 5        | PR/push touching `infra/week9-sqs/**`    | `fmt` → `init` → `validate` → `plan` (comments on PR) → `apply` on `main`     |
+| [`terraform.yml`](.github/workflows/terraform.yml)                  | 5        | PR/push touching `infrastructure/week9-sqs/**`    | `fmt` → `init` → `validate` → `plan` (comments on PR) → `apply` on `main`     |
 | [`build-all.yml`](.github/workflows/build-all.yml)                  | 6        | push to `main`, `workflow_dispatch`      | Matrix build & push for `user-service`, `product-service`, `order-service`    |
 | [`deploy-prod.yml`](.github/workflows/deploy-prod.yml)              | 7        | `workflow_dispatch`                      | `deploy-prod` job gated on the `production` environment (manual approval)     |
 | [`reusable-image.yml`](.github/workflows/reusable-image.yml)        | 8        | `workflow_call` (reusable)               | Parameterised Docker build & push, called by `release.yml`                    |
@@ -647,12 +650,12 @@ aws iam create-open-id-connect-provider \
   --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
 ```
 
-**2. Create the IAM role** using the trust policy in this repo at [`infra/github-oidc/trust-policy.json`](infra/github-oidc/trust-policy.json) (replace `<ACCOUNT_ID>` with your AWS account ID first):
+**2. Create the IAM role** using the trust policy in this repo at [`infrastructure/github-oidc/trust-policy.json`](infrastructure/github-oidc/trust-policy.json) (replace `<ACCOUNT_ID>` with your AWS account ID first):
 
 ```bash
 aws iam create-role \
   --role-name gha-deployer \
-  --assume-role-policy-document file://infra/github-oidc/trust-policy.json
+  --assume-role-policy-document file://infrastructure/github-oidc/trust-policy.json
 ```
 
 **3. Attach a least-privilege policy** — start with read-only to verify:
@@ -663,7 +666,7 @@ aws iam attach-role-policy \
   --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
 ```
 
-For Terraform (Activity 5) you'll need broader rights (SQS, IAM, S3 for backend state). Use a custom policy scoped to the resources in `infra/week9-sqs/`.
+For Terraform (Activity 5) you'll need broader rights (SQS, IAM, S3 for backend state). Use a custom policy scoped to the resources in `infrastructure/week9-sqs/`.
 
 **4. Store the role ARN** as repo secret `AWS_ROLE_TO_ASSUME`:
 
@@ -691,7 +694,7 @@ arn:aws:iam::<ACCOUNT_ID>:role/gha-deployer
 | `ci.yml`              | Open a PR, or push to `main`                                                            |
 | `image.yml`           | Push to `main`, or Run workflow manually                                                |
 | `aws-test.yml`        | Actions tab → AWS OIDC Test → Run workflow                                              |
-| `terraform.yml`       | Edit a file under `infra/week9-sqs/` and open a PR; merge to `main` for apply           |
+| `terraform.yml`       | Edit a file under `infrastructure/week9-sqs/` and open a PR; merge to `main` for apply           |
 | `build-all.yml`       | Push to `main`, or Run workflow manually                                                |
 | `deploy-prod.yml`     | Actions tab → Deploy to Production → Run workflow → approve at the gate                 |
 | `release.yml`         | `git tag v0.1.0 && git push origin v0.1.0`                                              |
@@ -731,9 +734,9 @@ Images are published to Docker Hub under the user configured in `DOCKERHUB_USERN
 
 ### Terraform usage (CI-driven)
 
-The Terraform configuration in [`infra/week9-sqs/`](infra/week9-sqs/) creates an SQS main queue + DLQ for the product-events flow. CI behaviour:
+The Terraform configuration in [`infrastructure/week9-sqs/`](infrastructure/week9-sqs/) creates an SQS main queue + DLQ for the product-events flow. CI behaviour:
 
-- **On PR touching `infra/week9-sqs/**`:** `fmt -check`, `init`, `validate`, `plan` runs and the plan is commented back on the PR.
+- **On PR touching `infrastructure/week9-sqs/**`:** `fmt -check`, `init`, `validate`, `plan` runs and the plan is commented back on the PR.
 - **On push to `main` touching the same paths:** the same steps plus `terraform apply -auto-approve` against the saved plan.
 
 > ⚠️ The current configuration uses **local state**. For team use, configure an S3 backend with DynamoDB locking before merging real changes to `main`.

@@ -1,0 +1,22 @@
+# Activity 2 (optional) — AWS EC2 dynamic inventory plugin
+# Run with: ansible-inventory -i inventory_aws_ec2.yml --graph
+#
+# Prerequisite: pip3 install boto3 botocore
+# Set AWS_REGION env var or use the regions list below.
+
+plugin: amazon.aws.aws_ec2
+regions:
+  - eu-central-1
+filters:
+  instance-state-name:
+    - running
+keyed_groups:
+  - key: tags.Environment
+    prefix: env
+  - key: tags.Role
+    prefix: role
+hostnames:
+  - tag:Name
+  - public-ip-address
+compose:
+  ansible_host: public_ip_address

@@ -1,0 +1,23 @@
+---
+# Activity 4 — Docker role tasks
+# Installs Docker on Amazon Linux 2 / 2023 (uses the distro-bundled `docker` package).
+# For CentOS 7 / RHEL 7 you'd swap to docker-ce from the upstream Docker CE repo.
+
+- name: Install Docker
+  yum:
+    name: docker
+    state: present
+
+- name: Start and enable Docker service
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+  notify: restart docker
+
+- name: Add users to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop: "{{ docker_users }}"

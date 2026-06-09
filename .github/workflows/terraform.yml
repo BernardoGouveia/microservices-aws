@@ -2,10 +2,10 @@ name: Terraform
 
 on:
   pull_request:
-    paths: [ 'infra/week9-sqs/**' ]
+    paths: [ 'infrastructure/week9-sqs/**' ]
   push:
     branches: [ main ]
-    paths: [ 'infra/week9-sqs/**' ]
+    paths: [ 'infrastructure/week9-sqs/**' ]
 
 permissions:
   id-token: write
@@ -17,14 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/week9-sqs
+        working-directory: infrastructure/week9-sqs
     steps:
       - uses: actions/checkout@v4
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: eu-west-1
+          aws-region: eu-central-1
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -42,7 +42,7 @@ jobs:
         with:
           script: |
             const out = require('child_process')
-              .execSync('terraform show -no-color tfplan', { cwd: 'infra/week9-sqs' })
+              .execSync('terraform show -no-color tfplan', { cwd: 'infrastructure/week9-sqs' })
               .toString();
             const body = '### Terraform Plan\n```hcl\n' + out.slice(0, 60000) + '\n```';
             github.rest.issues.createComment({
