@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn -B -q -pl services/product-service dependency:tree)",
+      "Bash(mvn -B -pl services/product-service dependency:tree)",
+      "Bash(mvn -B test)"
+    ]
+  }
+}

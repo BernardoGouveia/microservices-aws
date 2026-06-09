@@ -23,6 +23,8 @@
       pip:
         name: docker
         executable: pip3
+        # AL2023: evita conflito ao tentar atualizar pacotes instalados via rpm (requests/urllib3)
+        extra_args: "--ignore-installed requests urllib3"
 
     - name: Stop the old user-service container (frees memory if still running)
       community.docker.docker_container:

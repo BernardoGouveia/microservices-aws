@@ -14,10 +14,10 @@ enable_nat_gateway   = false # NAT não é Free Tier; a RDS é privada mas não 
 
 # Computação
 instance_type = "t3.micro"
-key_name      = "" # indicar o nome de um key pair para SSH; caso contrário usar Session Manager
+key_name      = "week6-key" # key pair em eu-central-1, para o Ansible ligar por SSH
 # Restringir ao teu próprio IP (ex.: "203.0.113.4/32") antes de expor a app publicamente.
 allowed_app_cidr = "0.0.0.0/0"
-allowed_ssh_cidr = "" # vazio = sem entrada SSH; ligar com: aws ssm start-session --target <instance-id>
+allowed_ssh_cidr = "85.240.185.78/32" # SSH aberto so para o meu IP (para o Ansible)
 
 # Base de dados
 db_instance_class      = "db.t3.micro"
